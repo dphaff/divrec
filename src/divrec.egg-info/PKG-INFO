@@ -1,0 +1,21 @@
+Metadata-Version: 2.4
+Name: divrec
+Version: 0.1.0
+Summary: UK Brokerage Dividend Crediting & Reconciliation Engine (GBP, v1)
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
+
+# UK Brokerage Dividend Crediting & Reconciliation Engine (GBP, v1)
+
+Python-only CLI + tests (pytest). `src/` layout. No pandas.
+
+## Setup (venv)
+
+```bash
+python -m venv .venv
+# macOS/Linux:
+source .venv/bin/activate
+# Windows (PowerShell):
+# .\.venv\Scripts\Activate.ps1

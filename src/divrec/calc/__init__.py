@@ -1,0 +1,1 @@
+"""Calculation utilities (v1 placeholder)."""

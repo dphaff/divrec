@@ -1,0 +1,1 @@
+"""Validation utilities (v1 placeholder)."""
