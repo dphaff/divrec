@@ -1,0 +1,4 @@
+isin,record_date,pay_date,crest_bucket,shares,dividend_per_share,cash_credited
+GB00B03MLX29,2026-02-20,2026-03-05,ISA,100,0.3333,33.33
+GB00B03MLX29,2026-02-20,2026-03-05,SIPP,50,0.3333,16.67
+GB00B03MLX29,2026-02-20,2026-03-05,GIA,10,0.3333,3.33
