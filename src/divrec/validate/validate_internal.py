@@ -5,6 +5,9 @@ from divrec.domain.models import InternalHolding
 
 
 def validate_internal_holdings(holdings: list[InternalHolding]) -> None:
+    if not holdings:
+        raise ValueError("EMPTY_INTERNAL")
+
     seen_keys: set[tuple[str, str, int]] = set()
 
     for h in holdings:

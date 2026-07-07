@@ -47,6 +47,17 @@ def test_happy_path_parses_and_validates_two_rows(tmp_path: Path) -> None:
     validate_internal_holdings(holdings)
 
 
+def test_empty_file_raises_empty_internal(tmp_path: Path) -> None:
+    p = tmp_path / "internal.csv"
+    header = ["isin", "record_date", "client_number", "product_code", "account_number", "shares"]
+    _write_csv(p, header, [])
+
+    holdings = read_internal_holdings_csv(p)
+    with pytest.raises(ValueError) as e:
+        validate_internal_holdings(holdings)
+    assert str(e.value) == "EMPTY_INTERNAL"
+
+
 def test_missing_column_raises_missing_column(tmp_path: Path) -> None:
     p = tmp_path / "internal.csv"
     header = ["isin", "record_date", "client_number", "product_code", "account_number"]  # missing shares
