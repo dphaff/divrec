@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-from divrec.domain.mapping import make_account_number
+from divrec.domain.mapping import ALLOWED_PRODUCT_CODES, make_account_number
 from divrec.domain.models import InternalHolding
-
-
-_ALLOWED_PRODUCT_CODES: set[int] = {22, 24, 25, 70, 71, 97}
 
 
 def validate_internal_holdings(holdings: list[InternalHolding]) -> None:
@@ -14,7 +11,7 @@ def validate_internal_holdings(holdings: list[InternalHolding]) -> None:
         if len(h.client_number) != 8 or not h.client_number.isdigit():
             raise ValueError("BAD_CLIENT_NUMBER")
 
-        if h.product_code not in _ALLOWED_PRODUCT_CODES:
+        if h.product_code not in ALLOWED_PRODUCT_CODES:
             raise ValueError("UNKNOWN_PRODUCT_CODE")
 
         expected_account = make_account_number(h.client_number, h.product_code)

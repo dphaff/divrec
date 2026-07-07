@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Literal
 
+from divrec.domain.mapping import make_account_number as _make_account_number
+
 CrestBucket = Literal["ISA", "SIPP", "GIA"]
 
 
@@ -52,7 +54,7 @@ def make_account_number(client_number: str, product_code: int) -> str:
 
     v1 placeholder: format is stable and testable, but can be swapped later.
     """
-    return f"{client_number}-{product_code:02d}"
+    return _make_account_number(client_number, product_code)
 
 
 def aggregate_internal_shares_by_bucket(

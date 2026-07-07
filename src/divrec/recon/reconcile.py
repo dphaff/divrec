@@ -1,24 +1,18 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Final
 
+from divrec.domain.mapping import HOUSE_CLIENT_NUMBER, HOUSE_PRODUCT_BY_BUCKET, make_account_number
 from divrec.domain.models import (
     BucketReconResult,
-    CrestBucket,
     CrestBucketSnapshot,
     CreditLine,
     InternalHolding,
     RunReconResult,
     aggregate_cash_by_bucket,
     aggregate_internal_shares_by_bucket,
-    make_account_number,
 )
 from divrec.recon.breaks import BreakRow
-
-
-HOUSE_CLIENT: Final[str] = "55555555"
-HOUSE_PRODUCT_BY_BUCKET: Final[dict[CrestBucket, int]] = {"ISA": 22, "SIPP": 70, "GIA": 97}
 
 
 def reconcile_run(
@@ -132,9 +126,9 @@ def reconcile_run(
                 isin=isin,
                 record_date=record_date,
                 pay_date=pay_date,
-                client_number=HOUSE_CLIENT,
+                client_number=HOUSE_CLIENT_NUMBER,
                 product_code=product_code,
-                account_number=make_account_number(HOUSE_CLIENT, product_code),
+                account_number=make_account_number(HOUSE_CLIENT_NUMBER, product_code),
                 crest_bucket=br.crest_bucket,
                 shares=0,
                 dividend_per_share=crest_by_bucket[br.crest_bucket].dividend_per_share,
