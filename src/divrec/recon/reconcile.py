@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from divrec.calc.aggregation import aggregate_cash_by_bucket, aggregate_internal_shares_by_bucket
 from divrec.domain.mapping import HOUSE_CLIENT_NUMBER, HOUSE_PRODUCT_BY_BUCKET, make_account_number
 from divrec.domain.models import (
     BucketReconResult,
@@ -9,8 +10,6 @@ from divrec.domain.models import (
     CreditLine,
     InternalHolding,
     RunReconResult,
-    aggregate_cash_by_bucket,
-    aggregate_internal_shares_by_bucket,
 )
 from divrec.recon.breaks import BreakRow
 
