@@ -7,6 +7,7 @@ from typing import Literal
 from divrec.domain.mapping import make_account_number as _make_account_number
 
 CrestBucket = Literal["ISA", "SIPP", "GIA"]
+CreditLineType = Literal["CLIENT", "HOUSE_ROUNDING"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,7 +47,7 @@ class CreditLine:
     shares: int
     dividend_per_share: Decimal
     cash_credited: Decimal
-    line_type: str  # "CLIENT" | "HOUSE_ROUNDING"
+    line_type: CreditLineType
 
 
 def make_account_number(client_number: str, product_code: int) -> str:
