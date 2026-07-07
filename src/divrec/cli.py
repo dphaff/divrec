@@ -240,7 +240,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             summary_path,
             {
                 **_initial_summary(run_id, isin, record_date, pay_date, dividend_per_share, internal_path, crest_path),
-                "status": "INPUT_ERROR",
+                "status": "PROCESSING_ERROR",
                 "error": err,
                 "exit_code": EXIT_INPUT_ERROR,
             },
