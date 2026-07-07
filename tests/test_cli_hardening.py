@@ -178,3 +178,36 @@ def test_cli_residual_exceeds_tolerance_is_fail(tmp_path: Path) -> None:
                 found = True
                 break
     assert found, "Expected RESIDUAL_EXCEEDS_TOLERANCE for crest_bucket=ISA in break_report.csv"
+
+
+def test_cli_crest_pay_date_mismatch_is_input_error(tmp_path: Path) -> None:
+    internal = tmp_path / "internal_valid.csv"
+    crest = tmp_path / "crest_wrong_pay_date.csv"
+
+    _write_csv(
+        internal,
+        header=["isin", "record_date", "client_number", "product_code", "account_number", "shares", "crest_bucket"],
+        rows=[
+            [ISIN, RECORD_DATE, "11111111", "22", "1111111122", "100", "ISA"],
+            [ISIN, RECORD_DATE, "22222222", "70", "2222222270", "50", "SIPP"],
+            [ISIN, RECORD_DATE, "33333333", "97", "3333333397", "10", "GIA"],
+        ],
+    )
+    _write_csv(
+        crest,
+        header=["isin", "record_date", "pay_date", "crest_bucket", "shares", "dividend_per_share", "cash_credited"],
+        rows=[
+            [ISIN, RECORD_DATE, "2026-03-06", "ISA", "100", DPS, "33.33"],
+            [ISIN, RECORD_DATE, "2026-03-06", "SIPP", "50", DPS, "16.67"],
+            [ISIN, RECORD_DATE, "2026-03-06", "GIA", "10", DPS, "3.33"],
+        ],
+    )
+
+    rc, run_outdir = _run_and_paths(tmp_path, "hardening_pay_date_mismatch", internal, crest)
+
+    assert rc == 3
+    assert run_outdir.exists()
+    assert (run_outdir / "audit_log.jsonl").exists()
+    assert (run_outdir / "run_summary.json").exists()
+    assert not (run_outdir / "credit_file.csv").exists()
+    assert not (run_outdir / "break_report.csv").exists()

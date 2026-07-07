@@ -117,6 +117,34 @@ def _unpack_recon_tuple(recon: Any) -> tuple[Any, list[Any], list[Any]]:
     return recon, [], getattr(recon, "break_rows", None) or getattr(recon, "breaks", None) or []
 
 
+def _validate_run_inputs_match(
+    holdings: list[Any],
+    crest_rows: list[Any],
+    isin: str,
+    record_date: date,
+    pay_date: date,
+    dividend_per_share: Decimal,
+) -> None:
+    record_date_s = record_date.isoformat()
+    pay_date_s = pay_date.isoformat()
+
+    for h in holdings:
+        if getattr(h, "isin", None) != isin:
+            raise ValueError("INTERNAL_ISIN_MISMATCH")
+        if getattr(h, "record_date", None) != record_date_s:
+            raise ValueError("INTERNAL_RECORD_DATE_MISMATCH")
+
+    for r in crest_rows:
+        if getattr(r, "isin", None) != isin:
+            raise ValueError("CREST_ISIN_MISMATCH")
+        if getattr(r, "record_date", None) != record_date_s:
+            raise ValueError("CREST_RECORD_DATE_MISMATCH")
+        if getattr(r, "pay_date", None) != pay_date_s:
+            raise ValueError("CREST_PAY_DATE_MISMATCH")
+        if getattr(r, "dividend_per_share", None) != dividend_per_share:
+            raise ValueError("CREST_RATE_MISMATCH")
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     isin: str = args.isin
     record_date: date = args.record_date
@@ -168,6 +196,8 @@ def cmd_run(args: argparse.Namespace) -> int:
 
         crest_rows = read_crest_snapshot_csv(Path(crest_path))
         validate_crest_snapshot(crest_rows)
+
+        _validate_run_inputs_match(holdings, crest_rows, isin, record_date, pay_date, dividend_per_share)
     except Exception as e:
         err = _err_str(e)
         audit.log_event("INPUT_ERROR", {"error": err})
