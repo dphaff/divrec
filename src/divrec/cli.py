@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import traceback
-from dataclasses import asdict, is_dataclass, replace, dataclass
+from dataclasses import asdict, is_dataclass
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
@@ -117,96 +117,6 @@ def _unpack_recon_tuple(recon: Any) -> tuple[Any, list[Any], list[Any]]:
     return recon, [], getattr(recon, "break_rows", None) or getattr(recon, "breaks", None) or []
 
 
-def _enrich_holdings_from_lines(holdings: list[Any], client_lines: list[Any]) -> list[Any]:
-    """
-    reconcile_run expects InternalHolding.crest_bucket to be set.
-    Avoid mapping imports by copying bucket from computed credit lines (account_number join).
-    """
-    bucket_by_acct: dict[str, str] = {}
-    for line in client_lines:
-        acct = str(getattr(line, "account_number", ""))
-        bucket = getattr(line, "crest_bucket", None)
-        if acct and bucket:
-            bucket_by_acct[acct] = str(bucket)
-
-    out: list[Any] = []
-    for h in holdings:
-        acct = str(getattr(h, "account_number", ""))
-        bucket = bucket_by_acct.get(acct)
-        if bucket is None:
-            out.append(h)
-            continue
-        if is_dataclass(h):
-            out.append(replace(h, crest_bucket=bucket))
-        else:
-            setattr(h, "crest_bucket", bucket)
-            out.append(h)
-    return out
-
-
-@dataclass(frozen=True, slots=True)
-class _HouseCreditLine:
-    run_id: str
-    isin: str
-    record_date: date
-    pay_date: date
-    client_number: str
-    product_code: int
-    account_number: str
-    crest_bucket: str
-    shares: int
-    dividend_per_share: Decimal
-    cash_credited: Decimal
-    line_type: str
-
-
-def _house_lines_from_bucket_results(
-    run_id: str,
-    isin: str,
-    record_date: date,
-    pay_date: date,
-    dividend_per_share: Decimal,
-    bucket_results: list[Any],
-) -> list[_HouseCreditLine]:
-    """
-    Golden test requires a HOUSE_ROUNDING line:
-      client_number=55555555, product_code=22, cash_credited=0.01
-    We derive residual_to_house from bucket_results and emit output-only lines.
-    """
-    out: list[_HouseCreditLine] = []
-    for br in bucket_results:
-        bucket = br.get("crest_bucket") if isinstance(br, dict) else getattr(br, "crest_bucket", None)
-        residual = br.get("residual_to_house") if isinstance(br, dict) else getattr(br, "residual_to_house", None)
-        if bucket is None or residual is None:
-            continue
-        if isinstance(residual, Decimal):
-            amt = residual.quantize(Decimal("0.01"))
-        else:
-            try:
-                amt = Decimal(str(residual)).quantize(Decimal("0.01"))
-            except Exception:
-                continue
-        if amt == Decimal("0.00"):
-            continue
-        out.append(
-            _HouseCreditLine(
-                run_id=run_id,
-                isin=isin,
-                record_date=record_date,
-                pay_date=pay_date,
-                client_number="55555555",
-                product_code=22,
-                account_number="5555555522",
-                crest_bucket=str(bucket),
-                shares=0,
-                dividend_per_share=dividend_per_share,
-                cash_credited=amt,
-                line_type="HOUSE_ROUNDING",
-            )
-        )
-    return out
-
-
 def cmd_run(args: argparse.Namespace) -> int:
     isin: str = args.isin
     record_date: date = args.record_date
@@ -282,8 +192,6 @@ def cmd_run(args: argparse.Namespace) -> int:
             dividend_per_share,
         )
 
-        holdings = _enrich_holdings_from_lines(holdings, client_lines)
-
         recon_tuple = reconcile_run(
             run_id,
             isin,
@@ -294,7 +202,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             client_lines,
             residual_tolerance=Decimal("0.01"),
         )
-        result, _unused, breaks = _unpack_recon_tuple(recon_tuple)
+        result, final_credit_lines, _breaks = _unpack_recon_tuple(recon_tuple)
     except Exception as e:
         err = _err_str(e)
         audit.log_event("PROCESSING_ERROR", {"error": err})
@@ -322,14 +230,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         return m
 
     if pass_run:
-        # Output-only: append required house rounding lines from bucket_results
-        bucket_results = getattr(result, "bucket_results", []) or []
-        house_lines = _house_lines_from_bucket_results(
-            run_id, isin, record_date, pay_date, dividend_per_share, bucket_results
-        )
-        credit_out = list(client_lines) + list(house_lines)
-
-        write_credit_file_csv(run_outdir / "credit_file.csv", credit_out)
+        write_credit_file_csv(run_outdir / "credit_file.csv", final_credit_lines)
 
         brk = run_outdir / "break_report.csv"
         if brk.exists():
